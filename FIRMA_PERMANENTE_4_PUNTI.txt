@@ -1,0 +1,14 @@
+FIRMA PERMANENTE - LETTORE EPUB
+
+Nel repository GitHub aprire:
+Settings > Secrets and variables > Actions > New repository secret
+
+Creare questi quattro Secrets:
+1. KEYSTORE_BASE64     = contenuto Base64 del file .jks
+2. KEYSTORE_PASSWORD   = password del keystore
+3. KEY_ALIAS           = alias della chiave
+4. KEY_PASSWORD        = password della chiave
+
+IMPORTANTE: conservare per sempre il file .jks e le password. Tutti i futuri
+aggiornamenti dovranno essere firmati con la stessa chiave per installarsi sopra
+la versione precedente senza perdere libreria, posizione di lettura e preferenze.

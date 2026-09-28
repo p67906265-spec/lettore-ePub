@@ -1,0 +1,33 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'com.paolofree.lettoreepub'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'com.paolofree.lettoreepub'
+        minSdk 26
+        targetSdk 36
+        versionCode 1
+        versionName '1.0'
+    }
+
+    signingConfigs {
+        release {
+            def ks = System.getenv('KEYSTORE_FILE')
+            if (ks && file(ks).exists()) {
+                storeFile file(ks)
+                storePassword System.getenv('KEYSTORE_PASSWORD')
+                keyAlias System.getenv('KEY_ALIAS')
+                keyPassword System.getenv('KEY_PASSWORD')
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig (System.getenv('KEYSTORE_FILE') && file(System.getenv('KEYSTORE_FILE')).exists()) ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+}

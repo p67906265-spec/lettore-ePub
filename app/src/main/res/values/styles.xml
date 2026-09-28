@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.LettoreEPub" parent="android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:fontFamily">sans</item><item name="android:colorAccent">#48C7E8</item>
+        <item name="android:navigationBarColor">#071521</item><item name="android:statusBarColor">#071521</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>
