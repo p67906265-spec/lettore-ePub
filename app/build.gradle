@@ -27,7 +27,12 @@ android {
     buildTypes {
         release {
             minifyEnabled false
-            signingConfig (System.getenv('KEYSTORE_FILE') && file(System.getenv('KEYSTORE_FILE')).exists()) ? signingConfigs.release : signingConfigs.debug
+            def releaseKeystore = System.getenv('KEYSTORE_FILE')
+            if (releaseKeystore != null && file(releaseKeystore).exists()) {
+                signingConfig signingConfigs.release
+            } else {
+                signingConfig signingConfigs.debug
+            }
         }
     }
 }
