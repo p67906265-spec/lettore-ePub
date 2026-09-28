@@ -18,8 +18,8 @@ jobs:
       - name: Compila APK debug installabile
         run: gradle assembleDebug --stacktrace
       - name: Rinomina APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk Lettore_ePub_v1.14_debug.apk
+        run: cp app/build/outputs/apk/debug/app-debug.apk Lettore_ePub_v1.15_debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: Lettore-ePub-v1.14-DEBUG-APK
-          path: Lettore_ePub_v1.14_debug.apk
+          name: Lettore-ePub-v1.15-DEBUG-APK
+          path: Lettore_ePub_v1.15_debug.apk
