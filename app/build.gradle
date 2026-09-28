@@ -8,8 +8,8 @@ android {
         applicationId 'com.paolofree.lettoreepub'
         minSdk 26
         targetSdk 36
-        versionCode 10
-        versionName '1.9'
+        versionCode 12
+        versionName '1.11'
     }
 
     signingConfigs {
@@ -30,8 +30,6 @@ android {
             def releaseKeystore = System.getenv('KEYSTORE_FILE')
             if (releaseKeystore != null && file(releaseKeystore).exists()) {
                 signingConfig signingConfigs.release
-            } else {
-                signingConfig signingConfigs.debug
             }
         }
     }

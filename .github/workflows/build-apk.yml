@@ -23,7 +23,8 @@ jobs:
             printf '%s' "$SIGNING_KEY_BASE64" | base64 --decode > app/paolo-release.jks
             echo "Firma permanente preparata"
           else
-            echo "Secrets firma non ancora presenti: verrà usata la firma di prova"
+            echo "::error::Secrets della firma permanente mancanti"
+            exit 1
           fi
       - name: Compila APK release
         env:
@@ -33,8 +34,8 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: gradle assembleRelease --stacktrace
       - name: Rinomina APK
-        run: cp app/build/outputs/apk/release/app-release.apk Lettore_ePub_v1.9.apk
+        run: cp app/build/outputs/apk/release/app-release.apk Lettore_ePub_v1.11.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: Lettore-ePub-v1.9-APK
-          path: Lettore_ePub_v1.9.apk
+          name: Lettore-ePub-v1.11-APK
+          path: Lettore_ePub_v1.11.apk

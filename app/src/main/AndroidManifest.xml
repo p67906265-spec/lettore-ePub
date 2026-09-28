@@ -3,6 +3,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <application
         android:allowBackup="true"
         android:fullBackupContent="@xml/backup_rules"
@@ -10,6 +11,10 @@
         android:icon="@mipmap/ic_launcher"
         android:label="Lettore ePub"
         android:theme="@style/Theme.LettoreEPub">
+        <service
+            android:name=".TtsService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
         <activity android:name=".ReaderActivity" android:configChanges="orientation|screenSize" />
         <activity android:name=".MainActivity" android:exported="true" android:launchMode="singleTop">
             <intent-filter>
