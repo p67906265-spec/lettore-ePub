@@ -33,7 +33,7 @@ public class EpubBook implements Closeable {
     public String html(int i,String theme,int size)throws IOException{
         String raw=new String(read(chapters.get(i)),StandardCharsets.UTF_8);
         String bg="#fffaf0",fg="#27221d";if("Scuro".equals(theme)){bg="#071521";fg="#eef6fa";}else if("Chiaro".equals(theme)){bg="#ffffff";fg="#202124";}
-        String css="<style>html{background:"+bg+"}body{color:"+fg+";font-family:serif;font-size:"+size+"px;line-height:1.65;padding:16px;max-width:800px;margin:auto}img{max-width:100%;height:auto}a{color:#35a7dc}</style>";
+        String css="<meta name=\"viewport\" content=\"width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no\"><style>html{background:"+bg+"}body{color:"+fg+";font-family:serif;font-size:"+size+"px;line-height:1.62;padding:16px;max-width:none;margin:0;text-align:left;overflow-wrap:break-word;hyphens:auto}p{text-align:left}img{max-width:100%;height:auto}a{color:#35a7dc}</style>";
         int h=raw.toLowerCase().indexOf("</head>"); return h>=0?raw.substring(0,h)+css+raw.substring(h):css+raw;
     }
     public String plain(int i)throws IOException{return Html.fromHtml(new String(read(chapters.get(i)),StandardCharsets.UTF_8),Html.FROM_HTML_MODE_LEGACY).toString().replaceAll("\\n{3,}","\n\n").trim();}
