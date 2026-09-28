@@ -61,7 +61,15 @@ public final class EpubBook implements Closeable {
     private static String stripFragment(String p){int i=p.indexOf('#');return i<0?p:p.substring(0,i);}
     private static String attr(Node n,String name){Node a=n.getAttributes().getNamedItem(name);return a==null?"":a.getNodeValue();}
     private static String text(Document d,String tag,String def){NodeList n=d.getElementsByTagName(tag);return n.getLength()>0?n.item(0).getTextContent():def;}
-    private static Document xml(byte[] bytes)throws Exception{DocumentBuilderFactory f=DocumentBuilderFactory.newInstance();f.setNamespaceAware(false);f.setFeature("http://apache.org/xml/features/disallow-doctype-decl",true);return f.newDocumentBuilder().parse(new ByteArrayInputStream(bytes));}
+    private static Document xml(byte[] bytes)throws Exception{
+        DocumentBuilderFactory f=DocumentBuilderFactory.newInstance();
+        f.setNamespaceAware(false);f.setExpandEntityReferences(false);
+        safeFeature(f,"http://apache.org/xml/features/disallow-doctype-decl",true);
+        safeFeature(f,"http://xml.org/sax/features/external-general-entities",false);
+        safeFeature(f,"http://xml.org/sax/features/external-parameter-entities",false);
+        return f.newDocumentBuilder().parse(new ByteArrayInputStream(bytes));
+    }
+    private static void safeFeature(DocumentBuilderFactory f,String name,boolean value){try{f.setFeature(name,value);}catch(Exception ignored){}}
     private byte[] read(String path)throws IOException{ZipEntry e=zip.getEntry(normalize(path));if(e==null)throw new FileNotFoundException(path);try(InputStream in=zip.getInputStream(e);ByteArrayOutputStream out=new ByteArrayOutputStream()){byte[]b=new byte[8192];int n;while((n=in.read(b))>0)out.write(b,0,n);return out.toByteArray();}}
     private static String decode(String p){try{return URLDecoder.decode(p.replace("+","%2B"),"UTF-8");}catch(Exception e){return p;}}
     private static String resolve(String parent,String href){href=decode(href);if(href.matches("^[a-zA-Z]+:.*"))return href;return normalize(parent+href);}
