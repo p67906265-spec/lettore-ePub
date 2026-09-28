@@ -33,7 +33,19 @@ public class EpubBook implements Closeable {
     public String html(int i,String theme,int size)throws IOException{
         String raw=new String(read(chapters.get(i)),StandardCharsets.UTF_8);
         String bg="#fffaf0",fg="#27221d";if("Scuro".equals(theme)){bg="#071521";fg="#eef6fa";}else if("Chiaro".equals(theme)){bg="#ffffff";fg="#202124";}
-        String css="<meta name=\"viewport\" content=\"width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no\"><style>html{background:"+bg+"}body{color:"+fg+";font-family:serif;font-size:"+size+"px;line-height:1.62;padding:16px;max-width:none;margin:0;text-align:left;overflow-wrap:break-word;hyphens:auto}p{text-align:left}img{max-width:100%;height:auto}a{color:#35a7dc}</style>";
+        String css="<meta name=\"viewport\" content=\"width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no\"><style>"
+                +"html{background:"+bg+"!important;}"
+                +"body{color:"+fg+"!important;font-family:Georgia,serif!important;font-size:"+size+"px!important;line-height:1.55!important;max-width:none!important;margin:0!important;text-align:left!important;overflow-wrap:anywhere!important;word-break:normal!important;hyphens:auto!important;}"
+                +"p{display:block!important;text-align:left!important;text-indent:0!important;word-spacing:normal!important;letter-spacing:normal!important;margin:.55em 0 .8em!important;padding:0!important;}"
+                +"h1,h2,h3,h4,h5,h6{break-after:avoid-column!important;page-break-after:avoid!important;text-align:left!important;word-spacing:normal!important;letter-spacing:normal!important;margin:.25em 0 .65em!important;padding:0!important;line-height:1.2!important;}"
+                +"img{display:block!important;max-width:100%!important;max-height:58vh!important;width:auto!important;height:auto!important;object-fit:contain!important;margin:.35em auto!important;break-inside:avoid-column!important;}"
+                +"figure,.figure,.image,.illustration{max-width:100%!important;margin:.35em auto .8em!important;padding:0!important;break-inside:avoid-column!important;}"
+                +"figcaption,.caption{font-size:.82em!important;line-height:1.25!important;text-align:center!important;margin:.25em 0 .6em!important;}"
+                +"pre,code{white-space:pre-wrap!important;overflow-wrap:anywhere!important;word-break:break-word!important;font-size:.78em!important;}"
+                +"table{max-width:100%!important;font-size:.78em!important;table-layout:fixed!important;}td,th{overflow-wrap:anywhere!important;}"
+                +"body>div,body>section,body>article{max-width:100%!important;padding-top:0!important;margin-top:0!important;}"
+                +"a{color:#35a7dc!important;}"
+                +"</style>";
         int h=raw.toLowerCase().indexOf("</head>"); return h>=0?raw.substring(0,h)+css+raw.substring(h):css+raw;
     }
     public String plain(int i)throws IOException{return Html.fromHtml(new String(read(chapters.get(i)),StandardCharsets.UTF_8),Html.FROM_HTML_MODE_LEGACY).toString().replaceAll("\\n{3,}","\n\n").trim();}
