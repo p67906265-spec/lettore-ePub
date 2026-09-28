@@ -37,5 +37,23 @@ public class EpubBook implements Closeable {
         int h=raw.toLowerCase().indexOf("</head>"); return h>=0?raw.substring(0,h)+css+raw.substring(h):css+raw;
     }
     public String plain(int i)throws IOException{return Html.fromHtml(new String(read(chapters.get(i)),StandardCharsets.UTF_8),Html.FROM_HTML_MODE_LEGACY).toString().replaceAll("\\n{3,}","\n\n").trim();}
+    public File extractTo(File destination)throws IOException{
+        destination.mkdirs();
+        Enumeration<? extends ZipEntry> entries=zip.entries();
+        String root=destination.getCanonicalPath()+File.separator;
+        while(entries.hasMoreElements()){
+            ZipEntry entry=entries.nextElement();
+            File output=new File(destination,entry.getName());
+            String canonical=output.getCanonicalPath();
+            if(!canonical.startsWith(root))continue;
+            if(entry.isDirectory()){output.mkdirs();continue;}
+            File parent=output.getParentFile();if(parent!=null)parent.mkdirs();
+            try(InputStream in=zip.getInputStream(entry);OutputStream out=new FileOutputStream(output)){
+                byte[] buffer=new byte[8192];int count;while((count=in.read(buffer))>0)out.write(buffer,0,count);
+            }
+        }
+        return destination;
+    }
+    public File chapterFile(File extracted,int i){return new File(extracted,chapters.get(i));}
     public void close()throws IOException{zip.close();}
 }
