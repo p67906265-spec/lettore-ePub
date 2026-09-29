@@ -119,15 +119,27 @@ public final class ReaderActivity extends Activity {
     }
 
     private void settings(){
-        String[] options={"Indice reale","Cerca nel capitolo","Aggiungi/rimuovi segnalibro","Segnalibri","Barra avanzamento","Testo più grande","Testo più piccolo","Margini stretti/medi/larghi","Scegli carattere","Tema chiaro","Tema seppia","Tema scuro","Velocità della voce","Scegli voce italiana","Timer spegnimento"};
-        new AlertDialog.Builder(this).setTitle("Personalizza lettura").setItems(options,(d,w)->{
-            if(w==0)showIndex();else if(w==1)search();else if(w==2)toggleBookmark();else if(w==3)showBookmarks();else if(w==4)showProgress();
-            else if(w==5){fontSize=Math.min(36,fontSize+2);saveLook();}else if(w==6){fontSize=Math.max(14,fontSize-2);saveLook();}
-            else if(w==7){margin=margin==18?30:margin==30?46:18;saveLook();}
-            else if(w==8)chooseFont();else if(w>=9&&w<=11){theme=w==9?"Chiaro":w==10?"Seppia":"Scuro";saveLook();}
-            else if(w==12)chooseRate();else if(w==13)chooseVoice();else chooseTimer();
-        }).show();
+        Dialog dialog=new Dialog(this);dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        LinearLayout shell=new LinearLayout(this);shell.setOrientation(LinearLayout.VERTICAL);shell.setPadding(dp(16),dp(14),dp(16),dp(16));shell.setBackground(panel(Color.rgb(7,28,43),22));
+        LinearLayout head=new LinearLayout(this);head.setGravity(Gravity.CENTER_VERTICAL);
+        TextView heading=new TextView(this);heading.setText("IMPOSTAZIONI LETTURA");heading.setTextColor(Color.WHITE);heading.setTextSize(19);heading.setTypeface(null,android.graphics.Typeface.BOLD);head.addView(heading,new LinearLayout.LayoutParams(0,dp(48),1));
+        TextView close=new TextView(this);close.setText("×");close.setTextColor(Color.rgb(255,187,51));close.setTextSize(30);close.setGravity(Gravity.CENTER);close.setOnClickListener(v->dialog.dismiss());head.addView(close,new LinearLayout.LayoutParams(dp(48),dp(48)));shell.addView(head);
+        TextView subtitle=new TextView(this);subtitle.setText("Personalizza il libro senza lasciare la pagina");subtitle.setTextColor(Color.rgb(153,184,199));subtitle.setTextSize(12);subtitle.setPadding(0,0,0,dp(10));shell.addView(subtitle);
+
+        LinearLayout content=new LinearLayout(this);content.setOrientation(LinearLayout.VERTICAL);
+        addMenuSection(content,"LIBRO",Color.rgb(72,199,232),new String[]{"Indice del libro","Cerca nel capitolo","Aggiungi o rimuovi segnalibro","Apri segnalibri","Avanzamento nel libro"},new Runnable[]{this::showIndex,this::search,this::toggleBookmark,this::showBookmarks,this::showProgress},dialog);
+        addMenuSection(content,"ASPETTO PAGINA",Color.rgb(255,187,51),new String[]{"Aumenta dimensione testo","Riduci dimensione testo","Margini pagina","Carattere: "+font,"Tema pagina: "+theme},new Runnable[]{()->{fontSize=Math.min(36,fontSize+2);saveLook();},()->{fontSize=Math.max(14,fontSize-2);saveLook();},()->{margin=margin==18?30:margin==30?46:18;saveLook();},this::chooseFont,this::chooseTheme},dialog);
+        addMenuSection(content,"LETTURA VOCALE",Color.rgb(235,92,92),new String[]{"Velocità della voce","Voce italiana","Timer spegnimento"},new Runnable[]{this::chooseRate,this::chooseVoice,this::chooseTimer},dialog);
+        ScrollView scroll=new ScrollView(this);scroll.setFillViewport(true);scroll.addView(content);shell.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
+        dialog.setContentView(shell);dialog.show();Window window=dialog.getWindow();if(window!=null){window.setBackgroundDrawableResource(android.R.color.transparent);window.setDimAmount(.72f);window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);window.setLayout((int)(getResources().getDisplayMetrics().widthPixels*.92f),(int)(getResources().getDisplayMetrics().heightPixels*.82f));}
     }
+    private void addMenuSection(LinearLayout parent,String title,int accent,String[] labels,Runnable[] actions,Dialog dialog){
+        TextView section=new TextView(this);section.setText(title);section.setTextColor(accent);section.setTextSize(11);section.setLetterSpacing(.14f);section.setTypeface(null,android.graphics.Typeface.BOLD);section.setPadding(dp(6),dp(12),dp(6),dp(6));parent.addView(section);
+        LinearLayout card=new LinearLayout(this);card.setOrientation(LinearLayout.VERTICAL);card.setPadding(dp(6),dp(5),dp(6),dp(5));GradientDrawable bg=panel(Color.rgb(10,39,58),16);bg.setStroke(dp(1),Color.argb(105,Color.red(accent),Color.green(accent),Color.blue(accent)));card.setBackground(bg);
+        for(int i=0;i<labels.length;i++){TextView row=new TextView(this);row.setText(labels[i]+"   ›");row.setTextColor(Color.rgb(235,244,248));row.setTextSize(15);row.setGravity(Gravity.CENTER_VERTICAL);row.setPadding(dp(14),0,dp(12),0);final Runnable action=actions[i];row.setOnClickListener(v->{dialog.dismiss();action.run();});card.addView(row,new LinearLayout.LayoutParams(-1,dp(46)));if(i<labels.length-1){View line=new View(this);line.setBackgroundColor(Color.rgb(28,66,85));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(1));lp.setMargins(dp(14),0,dp(14),0);card.addView(line,lp);}}
+        parent.addView(card);
+    }
+    private void chooseTheme(){String[] names={"Chiaro","Seppia","Scuro"};new AlertDialog.Builder(this).setTitle("Tema pagina").setSingleChoiceItems(names,Math.max(0,Arrays.asList(names).indexOf(theme)),(d,w)->{theme=names[w];d.dismiss();saveLook();}).setNegativeButton("Annulla",null).show();}
     private void saveLook(){double pct=page/(double)Math.max(1,pageCount-1);prefs.edit().putInt("size",fontSize).putInt("margin",margin).putString("theme",theme).putString("font",font).apply();showChapter(false);web.postDelayed(()->{page=Math.min(pageCount-1,(int)Math.round(pct*Math.max(0,pageCount-1)));moveToPage(false,0);},350);}
     private void showIndex(){String[] a=book.labels.toArray(new String[0]);new AlertDialog.Builder(this).setTitle("Indice del libro").setItems(a,(d,w)->{stopSpeak();chapter=w;page=0;ttsPosition=0;showChapter(false);}).show();}
     private void search(){EditText e=new EditText(this);e.setHint("Parola o frase");new AlertDialog.Builder(this).setTitle("Cerca nel capitolo").setView(e).setPositiveButton("Cerca",(d,w)->web.findAllAsync(e.getText().toString())).setNegativeButton("Annulla",null).show();}
@@ -137,7 +149,30 @@ public final class ReaderActivity extends Activity {
     private void showProgress(){SeekBar bar=new SeekBar(this);bar.setMax(Math.max(0,book.chapters.size()*100-1));bar.setProgress(chapter*100+(int)(100.0*page/Math.max(1,pageCount)));new AlertDialog.Builder(this).setTitle("Avanzamento nel libro").setView(bar).setPositiveButton("Vai",(d,w)->{chapter=Math.min(book.chapters.size()-1,bar.getProgress()/100);page=0;ttsPosition=0;showChapter(false);}).setNegativeButton("Annulla",null).show();}
     private void chooseFont(){String[]a={"Georgia","sans-serif","serif","monospace"};new AlertDialog.Builder(this).setTitle("Carattere").setItems(a,(d,w)->{font=a[w];saveLook();}).show();}
     private void chooseRate(){String[]a={"0,75×","0,90×","1×","1,15×","1,30×"};float[]v={.75f,.9f,1f,1.15f,1.3f};new AlertDialog.Builder(this).setTitle("Velocità voce").setItems(a,(d,w)->prefs.edit().putFloat("rate",v[w]).apply()).show();}
-    private void chooseVoice(){final android.speech.tts.TextToSpeech[] engine=new android.speech.tts.TextToSpeech[1];engine[0]=new android.speech.tts.TextToSpeech(this,status->{if(status!=android.speech.tts.TextToSpeech.SUCCESS){Toast.makeText(this,"Sintesi vocale non disponibile",Toast.LENGTH_LONG).show();return;}ArrayList<android.speech.tts.Voice> voices=new ArrayList<>();for(android.speech.tts.Voice v:engine[0].getVoices())if(v.getLocale()!=null&&"it".equals(v.getLocale().getLanguage()))voices.add(v);String[] names=new String[voices.size()];for(int i=0;i<voices.size();i++)names[i]=voices.get(i).getName();new AlertDialog.Builder(this).setTitle("Voce italiana").setItems(names,(d,w)->{prefs.edit().putString("voice",voices.get(w).getName()).apply();engine[0].shutdown();}).setOnCancelListener(d->engine[0].shutdown()).show();});}
+    private void chooseVoice(){
+        final android.speech.tts.TextToSpeech[] engine=new android.speech.tts.TextToSpeech[1];
+        engine[0]=new android.speech.tts.TextToSpeech(this,status->{
+            if(isFinishing()||isDestroyed()){if(engine[0]!=null)engine[0].shutdown();return;}
+            if(status!=android.speech.tts.TextToSpeech.SUCCESS){Toast.makeText(this,"Sintesi vocale non disponibile",Toast.LENGTH_LONG).show();if(engine[0]!=null)engine[0].shutdown();return;}
+            ArrayList<android.speech.tts.Voice> voices=new ArrayList<>();
+            try{
+                engine[0].setLanguage(Locale.ITALIAN);
+                for(android.speech.tts.Voice v:engine[0].getVoices()){
+                    if(v.getLocale()!=null&&"it".equals(v.getLocale().getLanguage())&&!v.isNetworkConnectionRequired())voices.add(v);
+                }
+                voices.sort(Comparator.comparing(android.speech.tts.Voice::getName));
+                if(voices.size()>2)voices.subList(2,voices.size()).clear();
+            }catch(Exception ignored){}
+            String[] names=new String[voices.size()+1];names[0]="Italiana automatica (consigliata)";
+            for(int i=0;i<voices.size();i++)names[i+1]="Voce italiana "+(i+1)+" • offline";
+            new AlertDialog.Builder(this).setTitle("Voce di lettura").setItems(names,(d,w)->{
+                if(w==0)prefs.edit().remove("voice").apply();
+                else prefs.edit().putString("voice",voices.get(w-1).getName()).apply();
+                try{engine[0].shutdown();}catch(Exception ignored){}
+                Toast.makeText(this,"Voce selezionata",Toast.LENGTH_SHORT).show();
+            }).setOnCancelListener(d->{try{engine[0].shutdown();}catch(Exception ignored){}}).show();
+        });
+    }
     private void chooseTimer(){String[]a={"Disattivato","15 minuti","30 minuti","45 minuti","60 minuti"};int[]v={0,15,30,45,60};new AlertDialog.Builder(this).setTitle("Timer spegnimento").setItems(a,(d,w)->{sleepTimer=v[w];prefs.edit().putInt("timer",sleepTimer).apply();}).show();}
     @Override protected void onDestroy(){savePosition();try{unregisterReceiver(voiceReceiver);}catch(Exception ignored){}try{if(book!=null)book.close();}catch(Exception ignored){}if(web!=null)web.destroy();super.onDestroy();}
 }
