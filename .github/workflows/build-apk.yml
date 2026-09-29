@@ -1,4 +1,4 @@
-name: Build APK senza firma permanente
+name: Build APK release firmato
 on:
   workflow_dispatch:
   push:
@@ -7,19 +7,40 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
-      - name: Compila APK debug installabile
-        run: gradle assembleDebug --stacktrace
+      - name: Verifica Secrets firma
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          for secret in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            if [ -z "${!secret}" ]; then
+              echo "::error::Secret $secret mancante"
+              exit 1
+            fi
+          done
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > app/paolo-release.jks
+          test -s app/paolo-release.jks
+          echo "Firma permanente preparata"
+      - name: Compila APK release firmato
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: gradle assembleRelease --stacktrace
       - name: Rinomina APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk Lettore_ePub_v1.15_debug.apk
+        run: cp app/build/outputs/apk/release/app-release.apk Lettore_ePub_v1.16_firmato.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: Lettore-ePub-v1.15-DEBUG-APK
-          path: Lettore_ePub_v1.15_debug.apk
+          name: Lettore-ePub-v1.16-RELEASE-FIRMATO
+          path: Lettore_ePub_v1.16_firmato.apk
+          if-no-files-found: error

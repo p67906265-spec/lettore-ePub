@@ -8,13 +8,23 @@ android {
         applicationId 'com.paolofree.lettoreepub'
         minSdk 26
         targetSdk 36
-        versionCode 16
-        versionName '1.15'
+        versionCode 17
+        versionName '1.16'
+    }
+
+    signingConfigs {
+        release {
+            storeFile file('paolo-release.jks')
+            storePassword System.getenv('KEYSTORE_PASSWORD')
+            keyAlias System.getenv('KEY_ALIAS')
+            keyPassword System.getenv('KEY_PASSWORD')
+        }
     }
 
     buildTypes {
         release {
             minifyEnabled false
+            signingConfig signingConfigs.release
         }
     }
 }
