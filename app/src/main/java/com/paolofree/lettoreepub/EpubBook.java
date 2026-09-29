@@ -80,7 +80,12 @@ public final class EpubBook implements Closeable {
                 .replaceAll("(?is)<script[^>]*>.*?</script>","")
                 .replaceAll("(?is)<iframe[^>]*>.*?</iframe>","")
                 .replaceAll("(?i)\\son[a-z]+\\s*=\\s*(['\"]).*?\\1","");
-        String bg="#fffaf0",fg="#27221d";if("Scuro".equals(theme)){bg="#071521";fg="#eef6fa";}else if("Chiaro".equals(theme)){bg="#fff";fg="#202124";}
+        String bg="#fffaf0",fg="#27221d";
+        if("Bianco".equals(theme)||"Chiaro".equals(theme)){bg="#ffffff";fg="#202124";}
+        else if("Sabbia".equals(theme)){bg="#f1e3c6";fg="#34291e";}
+        else if("Verde salvia".equals(theme)){bg="#dfe9dd";fg="#243127";}
+        else if("Blu notte".equals(theme)){bg="#0b1f2d";fg="#e3edf3";}
+        else if("Nero".equals(theme)||"Scuro".equals(theme)){bg="#101010";fg="#eeeeee";}
         String css="<meta name=\"viewport\" content=\"width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no\"><style id=\"reader-style\">html{background:"+bg+"!important}body{color:"+fg+"!important;font-family:var(--reader-font,Georgia),serif!important;font-size:"+size+"px!important;line-height:1.55!important;max-width:none!important;margin:0!important;padding:24px "+margin+"px 40px!important;text-align:left!important;overflow-wrap:anywhere!important}p{display:block!important;text-align:left!important;text-indent:0!important;word-spacing:normal!important;letter-spacing:normal!important;margin:.55em 0 .8em!important}h1,h2,h3,h4,h5,h6{page-break-after:avoid!important;text-align:left!important;line-height:1.2!important}img{display:block!important;max-width:100%!important;max-height:58vh!important;width:auto!important;height:auto!important;object-fit:contain!important;margin:.35em auto!important}figure{max-width:100%!important;margin:.35em auto .8em!important}pre,code{white-space:pre-wrap!important;overflow-wrap:anywhere!important;font-size:.78em!important}table{max-width:100%!important;font-size:.78em!important;table-layout:fixed!important}a{color:#35a7dc!important}.tts-current{background:#ffd75a!important;color:#17212b!important;border-radius:4px}</style>";
         int h=raw.toLowerCase(Locale.ROOT).indexOf("</head>");return h>=0?raw.substring(0,h)+css+raw.substring(h):css+raw;
     }

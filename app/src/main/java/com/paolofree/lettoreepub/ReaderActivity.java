@@ -16,7 +16,7 @@ import java.util.*;
 
 public final class ReaderActivity extends Activity {
     private EpubBook book; private File extracted; private WebView web;
-    private TextView titleView,pageView; private View topBar,bottomDock; private android.content.SharedPreferences prefs;
+    private TextView titleView,pageView,openMenuHeader; private View topBar,bottomDock; private LinearLayout openMenuCard; private android.content.SharedPreferences prefs;
     private int chapter,page,pageCount=1,fontSize=20,margin=30,ttsPosition,sleepTimer;
     private String theme="Seppia",font="Georgia"; private boolean turnLocked,speaking,paused,chromeVisible=true; private double pendingPagePercent=-1d;
     private float touchStartX,touchStartY;
@@ -127,6 +127,7 @@ public final class ReaderActivity extends Activity {
     }
 
     private void settings(){
+        openMenuCard=null;openMenuHeader=null;
         Dialog dialog=new Dialog(this);dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         LinearLayout shell=new LinearLayout(this);shell.setOrientation(LinearLayout.VERTICAL);shell.setPadding(dp(16),dp(14),dp(16),dp(16));shell.setBackground(panel(Color.rgb(7,28,43),22));
         LinearLayout head=new LinearLayout(this);head.setGravity(Gravity.CENTER_VERTICAL);
@@ -142,12 +143,20 @@ public final class ReaderActivity extends Activity {
         dialog.setContentView(shell);dialog.show();Window window=dialog.getWindow();if(window!=null){window.setBackgroundDrawableResource(android.R.color.transparent);window.setDimAmount(.72f);window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);window.setLayout((int)(getResources().getDisplayMetrics().widthPixels*.92f),(int)(getResources().getDisplayMetrics().heightPixels*.82f));}
     }
     private void addMenuSection(LinearLayout parent,String title,int accent,String[] labels,Runnable[] actions,Dialog dialog){
-        TextView section=new TextView(this);section.setText(title);section.setTextColor(accent);section.setTextSize(11);section.setLetterSpacing(.14f);section.setTypeface(null,android.graphics.Typeface.BOLD);section.setPadding(dp(6),dp(12),dp(6),dp(6));parent.addView(section);
+        TextView section=new TextView(this);section.setText(title+"     ▸");section.setTextColor(accent);section.setTextSize(12);section.setLetterSpacing(.12f);section.setTypeface(null,android.graphics.Typeface.BOLD);section.setGravity(Gravity.CENTER_VERTICAL);section.setPadding(dp(12),dp(8),dp(10),dp(8));GradientDrawable sectionBg=panel(Color.rgb(10,39,58),14);sectionBg.setStroke(dp(1),Color.argb(105,Color.red(accent),Color.green(accent),Color.blue(accent)));section.setBackground(sectionBg);LinearLayout.LayoutParams sectionLp=new LinearLayout.LayoutParams(-1,dp(48));sectionLp.setMargins(0,dp(7),0,0);parent.addView(section,sectionLp);
         LinearLayout card=new LinearLayout(this);card.setOrientation(LinearLayout.VERTICAL);card.setPadding(dp(6),dp(5),dp(6),dp(5));GradientDrawable bg=panel(Color.rgb(10,39,58),16);bg.setStroke(dp(1),Color.argb(105,Color.red(accent),Color.green(accent),Color.blue(accent)));card.setBackground(bg);
         for(int i=0;i<labels.length;i++){TextView row=new TextView(this);row.setText(labels[i]+"   ›");row.setTextColor(Color.rgb(235,244,248));row.setTextSize(15);row.setGravity(Gravity.CENTER_VERTICAL);row.setPadding(dp(14),0,dp(12),0);final Runnable action=actions[i];row.setOnClickListener(v->{dialog.dismiss();action.run();});card.addView(row,new LinearLayout.LayoutParams(-1,dp(46)));if(i<labels.length-1){View line=new View(this);line.setBackgroundColor(Color.rgb(28,66,85));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(1));lp.setMargins(dp(14),0,dp(14),0);card.addView(line,lp);}}
-        parent.addView(card);
+        card.setVisibility(View.GONE);LinearLayout.LayoutParams cardLp=new LinearLayout.LayoutParams(-1,-2);cardLp.setMargins(0,dp(4),0,0);parent.addView(card,cardLp);
+        section.setOnClickListener(v->{boolean opening=card.getVisibility()!=View.VISIBLE;if(openMenuCard!=null&&openMenuCard!=card){openMenuCard.setVisibility(View.GONE);if(openMenuHeader!=null)openMenuHeader.setText(openMenuHeader.getTag()+"     ▸");}card.setVisibility(opening?View.VISIBLE:View.GONE);section.setText(title+(opening?"     ▾":"     ▸"));openMenuCard=opening?card:null;openMenuHeader=opening?section:null;});section.setTag(title);
     }
-    private void chooseTheme(){String[] names={"Chiaro","Seppia","Scuro"};new AlertDialog.Builder(this).setTitle("Tema pagina").setSingleChoiceItems(names,Math.max(0,Arrays.asList(names).indexOf(theme)),(d,w)->{theme=names[w];d.dismiss();saveLook();}).setNegativeButton("Annulla",null).show();}
+    private void chooseTheme(){
+        String[] names={"Bianco","Seppia","Sabbia","Verde salvia","Blu notte","Nero"};int[] colors={Color.WHITE,Color.rgb(252,248,238),Color.rgb(241,227,198),Color.rgb(223,233,221),Color.rgb(11,31,45),Color.rgb(16,16,16)};
+        Dialog dialog=new Dialog(this);dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);LinearLayout shell=new LinearLayout(this);shell.setOrientation(LinearLayout.VERTICAL);shell.setPadding(dp(16),dp(14),dp(16),dp(16));shell.setBackground(panel(Color.rgb(7,28,43),20));
+        TextView heading=new TextView(this);heading.setText("COLORE DELLA PAGINA");heading.setTextColor(Color.WHITE);heading.setTextSize(18);heading.setTypeface(null,android.graphics.Typeface.BOLD);heading.setPadding(dp(4),0,0,dp(10));shell.addView(heading);
+        String selected="Chiaro".equals(theme)?"Bianco":"Scuro".equals(theme)?"Nero":theme;
+        for(int i=0;i<names.length;i++){LinearLayout row=new LinearLayout(this);row.setGravity(Gravity.CENTER_VERTICAL);row.setPadding(dp(10),0,dp(12),0);GradientDrawable rowBg=panel(Color.rgb(10,39,58),13);rowBg.setStroke(dp(1),names[i].equals(selected)?Color.rgb(255,187,51):Color.rgb(28,66,85));row.setBackground(rowBg);View swatch=new View(this);swatch.setBackground(panel(colors[i],9));row.addView(swatch,new LinearLayout.LayoutParams(dp(38),dp(38)));TextView label=new TextView(this);label.setText(names[i]+(names[i].equals(selected)?"   ✓":""));label.setTextColor(Color.rgb(235,244,248));label.setTextSize(16);label.setPadding(dp(14),0,0,0);row.addView(label,new LinearLayout.LayoutParams(0,-1,1));final String value=names[i];row.setOnClickListener(v->{theme=value;dialog.dismiss();saveLook();});LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(54));lp.setMargins(0,dp(4),0,dp(4));shell.addView(row,lp);}
+        dialog.setContentView(shell);dialog.show();Window window=dialog.getWindow();if(window!=null){window.setBackgroundDrawableResource(android.R.color.transparent);window.setDimAmount(.72f);window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);window.setLayout((int)(getResources().getDisplayMetrics().widthPixels*.88f),WindowManager.LayoutParams.WRAP_CONTENT);}
+    }
     private void saveLook(){double pct=page/(double)Math.max(1,pageCount-1);prefs.edit().putInt("size",fontSize).putInt("margin",margin).putString("theme",theme).putString("font",font).apply();showChapter(false);web.postDelayed(()->{page=Math.min(pageCount-1,(int)Math.round(pct*Math.max(0,pageCount-1)));moveToPage(false,0);},350);}
     private void showIndex(){String[] a=book.labels.toArray(new String[0]);new AlertDialog.Builder(this).setTitle("Indice del libro").setItems(a,(d,w)->{stopSpeak();chapter=w;page=0;ttsPosition=0;showChapter(false);}).show();}
     private void search(){EditText e=new EditText(this);e.setHint("Parola o frase");new AlertDialog.Builder(this).setTitle("Cerca nel capitolo").setView(e).setPositiveButton("Cerca",(d,w)->web.findAllAsync(e.getText().toString())).setNegativeButton("Annulla",null).show();}
