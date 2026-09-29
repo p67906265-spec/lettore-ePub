@@ -99,6 +99,13 @@ public final class EpubBook implements Closeable {
     public File chapterFile(File extracted,int i){return new File(extracted,chapters.get(i));}
     public File coverFile(File extracted){return coverPath==null?null:new File(extracted,coverPath);}
     public byte[] coverBytes(){try{return coverPath==null?null:read(coverPath);}catch(Exception e){return null;}}
+    public String progressLabel(int index){
+        if(labels.isEmpty())return "APRI IL LIBRO";index=Math.max(0,Math.min(index,labels.size()-1));String current=labels.get(index).trim();Integer number=chapterNumber(current);
+        if(number!=null){int last=number;for(String label:labels){Integer n=chapterNumber(label);if(n!=null)last=Math.max(last,n);}return "CAPITOLO "+number+(last>number?" DI "+last:"");}
+        if(current.toLowerCase(Locale.ITALIAN).startsWith("capitolo "))return current.toUpperCase(Locale.ITALIAN);
+        return current.isEmpty()?"APRI IL LIBRO":current.toUpperCase(Locale.ITALIAN);
+    }
+    private static Integer chapterNumber(String label){try{java.util.regex.Matcher m=java.util.regex.Pattern.compile("(?i)^(?:(?:capitolo|chapter)\\s*)?(\\d+)\\b").matcher(label.trim());return m.find()?Integer.parseInt(m.group(1)):null;}catch(Exception ignored){return null;}}
     public int findChapter(String path){String n=normalize(decode(path));for(int i=0;i<chapters.size();i++)if(n.endsWith(chapters.get(i)))return i;return -1;}
     @Override public void close()throws IOException{zip.close();}
 }

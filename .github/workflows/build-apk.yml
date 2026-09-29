@@ -38,9 +38,9 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: gradle assembleRelease --stacktrace
       - name: Rinomina APK
-        run: cp app/build/outputs/apk/release/app-release.apk Lettore_ePub_v1.18_menu_settori_firmato.apk
+        run: cp app/build/outputs/apk/release/app-release.apk Lettore_ePub_v1.20_capitoli_reali_firmato.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: Lettore-ePub-v1.18-MENU-SETTORI-FIRMATO
-          path: Lettore_ePub_v1.18_menu_settori_firmato.apk
+          name: Lettore-ePub-v1.20-CAPITOLI-REALI-FIRMATO
+          path: Lettore_ePub_v1.20_capitoli_reali_firmato.apk
           if-no-files-found: error

@@ -16,9 +16,9 @@ import java.util.*;
 
 public final class ReaderActivity extends Activity {
     private EpubBook book; private File extracted; private WebView web;
-    private TextView titleView,pageView; private android.content.SharedPreferences prefs;
+    private TextView titleView,pageView; private View topBar,bottomDock; private android.content.SharedPreferences prefs;
     private int chapter,page,pageCount=1,fontSize=20,margin=30,ttsPosition,sleepTimer;
-    private String theme="Seppia",font="Georgia"; private boolean turnLocked,speaking,paused;
+    private String theme="Seppia",font="Georgia"; private boolean turnLocked,speaking,paused,chromeVisible=true; private double pendingPagePercent=-1d;
     private float touchStartX,touchStartY;
 
     private final BroadcastReceiver voiceReceiver=new BroadcastReceiver(){
@@ -59,7 +59,7 @@ public final class ReaderActivity extends Activity {
     private void buildInterface(){
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setBackgroundColor(Color.rgb(5,17,27));
         root.setOnApplyWindowInsetsListener((v,i)->{v.setPadding(0,i.getSystemWindowInsetTop(),0,i.getSystemWindowInsetBottom());return i;});
-        LinearLayout top=new LinearLayout(this);top.setGravity(Gravity.CENTER_VERTICAL);top.setPadding(dp(8),dp(5),dp(8),dp(5));top.setBackground(panel(Color.rgb(8,29,44),0));
+        LinearLayout top=new LinearLayout(this);topBar=top;top.setGravity(Gravity.CENTER_VERTICAL);top.setPadding(dp(8),dp(5),dp(8),dp(5));top.setBackground(panel(Color.rgb(8,29,44),0));
         TextView back=button("‹",Color.rgb(72,199,232));back.setLayoutParams(new LinearLayout.LayoutParams(dp(54),dp(54)));back.setOnClickListener(v->finish());top.addView(back);
         LinearLayout heading=new LinearLayout(this);heading.setOrientation(LinearLayout.VERTICAL);heading.setPadding(dp(12),0,dp(8),0);
         titleView=new TextView(this);titleView.setTextColor(Color.WHITE);titleView.setTextSize(17);titleView.setSingleLine(true);titleView.setEllipsize(android.text.TextUtils.TruncateAt.END);
@@ -79,12 +79,12 @@ public final class ReaderActivity extends Activity {
             if(e.getAction()==MotionEvent.ACTION_DOWN){touchStartX=e.getX();touchStartY=e.getY();return true;}
             if(e.getAction()==MotionEvent.ACTION_UP){float dx=e.getX()-touchStartX,dy=e.getY()-touchStartY;
                 if(Math.abs(dx)>dp(55)&&Math.abs(dx)>Math.abs(dy)){if(dx<0)nextPage();else previousPage();}
-                else if(Math.abs(dx)<dp(18)&&Math.abs(dy)<dp(18)){if(e.getX()>web.getWidth()*.68f)nextPage();else if(e.getX()<web.getWidth()*.32f)previousPage();else activateLinkAt(e.getX(),e.getY());}
+                else if(Math.abs(dx)<dp(18)&&Math.abs(dy)<dp(18)){if(e.getX()>web.getWidth()*.68f)nextPage();else if(e.getX()<web.getWidth()*.32f)previousPage();else activateLinkOrToggle(e.getX(),e.getY());}
                 return true;}return true;
         });
         GradientDrawable paper=panel(Color.rgb(252,248,238),18);paper.setStroke(dp(1),Color.rgb(39,94,122));web.setBackground(paper);web.setClipToOutline(true);frame.addView(web,new FrameLayout.LayoutParams(-1,-1));root.addView(frame,new LinearLayout.LayoutParams(-1,0,1));
         pageView=new TextView(this);pageView.setTextColor(Color.rgb(164,191,205));pageView.setTextSize(12);pageView.setGravity(Gravity.CENTER);pageView.setOnClickListener(v->showProgress());root.addView(pageView,new LinearLayout.LayoutParams(-1,dp(28)));
-        LinearLayout dock=new LinearLayout(this);dock.setGravity(Gravity.CENTER);dock.setPadding(dp(48),0,dp(48),dp(5));dock.setBackground(panel(Color.rgb(8,29,44),22));
+        LinearLayout dock=new LinearLayout(this);bottomDock=dock;dock.setGravity(Gravity.CENTER);dock.setPadding(dp(48),0,dp(48),dp(5));dock.setBackground(panel(Color.rgb(8,29,44),22));
         TextView read=button("🔊",Color.rgb(255,187,51));read.setOnClickListener(v->speak());TextView pause=button("Ⅱ",Color.rgb(72,199,232));pause.setOnClickListener(v->pauseResume());TextView stop=button("■",Color.rgb(235,92,92));stop.setOnClickListener(v->stopSpeak());
         dock.addView(read);dock.addView(pause);dock.addView(stop);root.addView(dock);setContentView(root);
     }
@@ -95,13 +95,21 @@ public final class ReaderActivity extends Activity {
     }
     private void preparePages(){
         String js="(function(){var w=innerWidth,h=innerHeight,m="+margin+";document.documentElement.style.cssText+=';width:'+w+'px!important;height:'+h+'px!important;margin:0!important;padding:0!important;overflow:hidden!important';document.body.style.cssText+=';box-sizing:border-box!important;width:'+w+'px!important;max-width:none!important;height:'+h+'px!important;max-height:'+h+'px!important;margin:0!important;padding:24px '+m+'px 32px!important;overflow:visible!important;column-width:'+(w-2*m)+'px!important;column-gap:'+(2*m)+'px!important;column-fill:auto!important;transform-origin:0 0!important;position:relative!important';var count=Math.max(1,Math.ceil(document.body.scrollWidth/w));window.readerPageOffsets=[];for(var i=0;i<count;i++)window.readerPageOffsets.push(i*w);return count;})()";
-        web.evaluateJavascript(js,r->{try{pageCount=Math.max(1,(int)Math.ceil(Double.parseDouble(r.replace("\"",""))));}catch(Exception ignored){pageCount=1;}page=Math.min(page,pageCount-1);moveToPage(false,0);});
+        web.evaluateJavascript(js,r->{try{pageCount=Math.max(1,(int)Math.ceil(Double.parseDouble(r.replace("\"",""))));}catch(Exception ignored){pageCount=1;}if(pendingPagePercent>=0){page=Math.min(pageCount-1,(int)Math.round(pendingPagePercent*Math.max(0,pageCount-1)));pendingPagePercent=-1d;}else page=Math.min(page,pageCount-1);moveToPage(false,0);});
     }
     private void moveToPage(boolean animate,int direction){String scroll="(function(){var x=(window.readerPageOffsets&&window.readerPageOffsets["+page+"])||0;document.body.style.transform='translate3d(-'+x+'px,0,0)';})()";if(!animate||direction==0){web.evaluateJavascript(scroll,null);turnLocked=false;}else{float d=web.getWidth()*.22f;web.animate().translationX(-direction*d).alpha(.2f).setDuration(120).withEndAction(()->{web.evaluateJavascript(scroll,null);web.setTranslationX(direction*d);web.animate().translationX(0).alpha(1).setDuration(170).withEndAction(()->turnLocked=false).start();}).start();}updateIndicator();savePosition();}
     private boolean lock(){if(turnLocked)return false;turnLocked=true;return true;}
     private void previousPage(){if(!lock())return;if(page>0){page--;moveToPage(true,-1);}else if(chapter>0){chapter--;page=9999;ttsPosition=0;showChapter(true);}else turnLocked=false;}
     private void nextPage(){if(!lock())return;if(page<pageCount-1){page++;moveToPage(true,1);}else if(chapter<book.chapters.size()-1){chapter++;page=0;ttsPosition=0;showChapter(false);}else{turnLocked=false;Toast.makeText(this,"Fine del libro",Toast.LENGTH_SHORT).show();}}
-    private void activateLinkAt(float x,float y){web.evaluateJavascript("(function(){var e=document.elementFromPoint("+x+"/devicePixelRatio,"+y+"/devicePixelRatio),a=e&&e.closest?e.closest('a'):null;if(a){a.click();return true}return false})()",null);}
+    private void activateLinkOrToggle(float x,float y){web.evaluateJavascript("(function(){var e=document.elementFromPoint("+x+"/devicePixelRatio,"+y+"/devicePixelRatio),a=e&&e.closest?e.closest('a'):null;if(a){a.click();return true}return false})()",r->{if(!"true".equals(r))toggleChrome();});}
+    private void toggleChrome(){
+        pendingPagePercent=page/(double)Math.max(1,pageCount-1);chromeVisible=!chromeVisible;int state=chromeVisible?View.VISIBLE:View.GONE;
+        if(topBar!=null)topBar.setVisibility(state);if(pageView!=null)pageView.setVisibility(state);if(bottomDock!=null)bottomDock.setVisibility(state);
+        View decor=getWindow().getDecorView();
+        if(chromeVisible)decor.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+        else decor.setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY|View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN|View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+        web.postDelayed(this::preparePages,220);
+    }
     private boolean openBookLink(Uri uri){int c=uri==null?-1:book.findChapter(uri.getPath());if(c>=0){stopSpeak();chapter=c;page=0;ttsPosition=0;showChapter(false);return true;}return false;}
     private void updateIndicator(){if(pageView!=null)pageView.setText(book.labels.get(chapter)+"   •   PAGINA "+(page+1)+" / "+pageCount);}
     private void savePosition(){prefs.edit().putInt(key("chapter"),chapter).putInt(key("page"),page).putInt(key("tts"),ttsPosition).apply();}
