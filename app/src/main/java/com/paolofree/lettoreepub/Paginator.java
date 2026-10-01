@@ -17,8 +17,10 @@ public final class Paginator {
         String js="(function(){var w=innerWidth,h=innerHeight,m="+margin+";document.documentElement.style.cssText+=';width:'+w+'px!important;height:'+h+'px!important;margin:0!important;padding:0!important;overflow:hidden!important';document.body.style.cssText+=';box-sizing:border-box!important;width:'+w+'px!important;max-width:none!important;height:'+h+'px!important;max-height:'+h+'px!important;margin:0!important;padding:24px '+m+'px 32px!important;overflow:visible!important;column-width:'+(w-2*m)+'px!important;column-gap:'+(2*m)+'px!important;column-fill:auto!important;transform-origin:0 0!important;position:relative!important';return Math.max(1,Math.ceil(document.body.scrollWidth/w));})()";
         web.evaluateJavascript(js,r->{try{pageCount=Math.max(1,(int)Math.ceil(Double.parseDouble(r.replace("\"",""))));}catch(Exception ignored){pageCount=1;}page=Math.min(pageCount-1,(int)Math.floor((textOffset/(double)Math.max(1,textLength))*pageCount));move();ready.onReady(pageCount,page);});
     }
-    public boolean next(){if(page>=pageCount-1)return false;page++;textOffset=offset();move();return true;}
-    public boolean previous(){if(page<=0)return false;page--;textOffset=offset();move();return true;}
+    public boolean next(){if(page>=pageCount-1)return false;page++;textOffset=offset();return true;}
+    public boolean previous(){if(page<=0)return false;page--;textOffset=offset();return true;}
+    public void apply(){move();}
+    public void setPage(int value){page=Math.max(0,Math.min(pageCount-1,value));textOffset=offset();move();}
     public void goToOffset(int offset){textOffset=Math.max(0,Math.min(textLength,offset));page=Math.min(pageCount-1,(int)Math.floor((textOffset/(double)Math.max(1,textLength))*pageCount));move();}
     public void goToAnchor(String anchor,Ready ready){
         String safe=anchor==null?"":anchor.replace("\\","\\\\").replace("'","\\'");

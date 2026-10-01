@@ -50,19 +50,19 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="content" android:mimeType="application/octet-stream" android:pathPattern=".*\\.epub" />
+                <data android:scheme="content" android:host="*" android:mimeType="application/octet-stream" android:pathPattern=".*\\.epub" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="content" android:mimeType="application/zip" android:pathPattern=".*\\.epub" />
+                <data android:scheme="content" android:host="*" android:mimeType="application/zip" android:pathPattern=".*\\.epub" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="content" android:mimeType="application/x-zip-compressed" android:pathPattern=".*\\.epub" />
+                <data android:scheme="content" android:host="*" android:mimeType="application/x-zip-compressed" android:pathPattern=".*\\.epub" />
             </intent-filter>
         </activity>
     </application>

@@ -7,6 +7,7 @@ import java.io.*;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.*;
 
 /** Parser EPUB: spine, indice EPUB2/3, copertina e percorsi URL encoded. */
@@ -15,7 +16,7 @@ public final class EpubBook implements Closeable {
     public String title="Libro senza titolo", author="", language="it", coverPath=null;
     public final ArrayList<String> chapters=new ArrayList<>(), labels=new ArrayList<>();
     public final ArrayList<TocEntry> tocEntries=new ArrayList<>();
-    private final Map<Integer,String> plainCache=new HashMap<>();
+    private final Map<Integer,String> plainCache=new ConcurrentHashMap<>();
     private final ZipFile zip;
     private final Map<String,String> manifest=new HashMap<>();
     private String base="";
@@ -54,7 +55,9 @@ public final class EpubBook implements Closeable {
     }
 
     private void readNav(String path,Map<String,String> out)throws Exception{
-        Document d=xml(read(path));NodeList links=d.getElementsByTagName("a");String p=parent(path);
+        Document d=xml(read(path));NodeList navs=d.getElementsByTagName("nav");String p=parent(path);Element toc=null;
+        for(int i=0;i<navs.getLength();i++){Element n=(Element)navs.item(i);String type=n.getAttribute("epub:type");if(type.isEmpty())type=n.getAttribute("type");String role=n.getAttribute("role");if(Arrays.asList(type.split("\\s+")).contains("toc")||"doc-toc".equals(role)){toc=n;break;}}
+        if(toc==null)return;NodeList links=toc.getElementsByTagName("a");
         for(int i=0;i<links.getLength();i++){Element a=(Element)links.item(i);String h=a.getAttribute("href");if(!h.isEmpty())out.put(resolve(p,h),a.getTextContent().replaceAll("\\s+"," "));}
     }
     private void readNcx(String path,Map<String,String> out)throws Exception{
