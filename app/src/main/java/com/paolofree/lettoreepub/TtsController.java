@@ -17,6 +17,6 @@ public final class TtsController {
         context.startForegroundService(i);
     }
     public void action(String action){context.startService(new Intent(context,TtsService.class).setAction(action));}
-    public void stop(){action(TtsService.STOP);}
+    public void stop(String path){Intent i=new Intent(context,TtsService.class).setAction(TtsService.STOP);if(path!=null&&!path.isEmpty())i.putExtra("path",path);context.startService(i);}
     public static String languageKey(String value){if(value==null||value.trim().isEmpty())return "it";String key=value.trim().toLowerCase(java.util.Locale.ROOT).replace('_','-');int dash=key.indexOf('-');return (dash>0?key.substring(0,dash):key).replaceAll("[^a-z]","");}
 }
