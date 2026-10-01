@@ -12,8 +12,10 @@ import java.util.zip.*;
 /** Parser EPUB: spine, indice EPUB2/3, copertina e percorsi URL encoded. */
 public final class EpubBook implements Closeable {
     public final File file;
-    public String title="Libro senza titolo", author="", coverPath=null;
+    public String title="Libro senza titolo", author="", language="it", coverPath=null;
     public final ArrayList<String> chapters=new ArrayList<>(), labels=new ArrayList<>();
+    public final ArrayList<TocEntry> tocEntries=new ArrayList<>();
+    private final Map<Integer,String> plainCache=new HashMap<>();
     private final ZipFile zip;
     private final Map<String,String> manifest=new HashMap<>();
     private String base="";
@@ -27,6 +29,7 @@ public final class EpubBook implements Closeable {
         base=slash<0?"":opf.substring(0,slash+1);
         Document pkg=xml(read(opf));
         title=text(pkg,"dc:title",title).trim(); author=text(pkg,"dc:creator","").trim();
+        language=text(pkg,"dc:language","it").trim();if(language.isEmpty())language="it";
         String navPath=null,ncxPath=null,coverId=null;
         NodeList metas=pkg.getElementsByTagName("meta");
         for(int i=0;i<metas.getLength();i++){Element e=(Element)metas.item(i);if("cover".equalsIgnoreCase(e.getAttribute("name")))coverId=e.getAttribute("content");}
@@ -45,6 +48,7 @@ public final class EpubBook implements Closeable {
         Map<String,String> toc=new LinkedHashMap<>();
         try{if(navPath!=null)readNav(navPath,toc);}catch(Exception ignored){}
         try{if(toc.isEmpty()&&ncxPath!=null)readNcx(ncxPath,toc);}catch(Exception ignored){}
+        for(Map.Entry<String,String> e:toc.entrySet()){int chapter=findChapter(e.getKey());if(chapter>=0)tocEntries.add(new TocEntry(e.getValue().trim(),chapter,fragment(e.getKey())));}
         for(int i=0;i<chapters.size();i++)for(Map.Entry<String,String> e:toc.entrySet())
             if(stripFragment(e.getKey()).equals(stripFragment(chapters.get(i)))){String v=e.getValue().trim();if(!v.isEmpty())labels.set(i,v);break;}
     }
@@ -59,6 +63,7 @@ public final class EpubBook implements Closeable {
     }
     private static String parent(String p){int i=p.lastIndexOf('/');return i<0?"":p.substring(0,i+1);}
     private static String stripFragment(String p){int i=p.indexOf('#');return i<0?p:p.substring(0,i);}
+    private static String fragment(String p){int i=p.indexOf('#');return i<0?"":p.substring(i+1);}
     private static String attr(Node n,String name){Node a=n.getAttributes().getNamedItem(name);return a==null?"":a.getNodeValue();}
     private static String text(Document d,String tag,String def){NodeList n=d.getElementsByTagName(tag);return n.getLength()>0?n.item(0).getTextContent():def;}
     private static Document xml(byte[] bytes)throws Exception{
@@ -90,10 +95,11 @@ public final class EpubBook implements Closeable {
         int h=raw.toLowerCase(Locale.ROOT).indexOf("</head>");return h>=0?raw.substring(0,h)+css+raw.substring(h):css+raw;
     }
     public String plain(int i)throws IOException{
+        String cached=plainCache.get(i);if(cached!=null)return cached;
         String raw=new String(read(chapters.get(i)),StandardCharsets.UTF_8)
                 .replaceAll("(?is)<(script|style|title|nav)[^>]*>.*?</\\1>"," ")
                 .replaceAll("(?is)<(sup|aside)[^>]*>.*?</\\1>"," ");
-        return Html.fromHtml(raw,Html.FROM_HTML_MODE_LEGACY).toString().replace('\u00a0',' ').replaceAll("[ \\t]+"," ").replaceAll("\\n{3,}","\\n\\n").trim();
+        String value=Html.fromHtml(raw,Html.FROM_HTML_MODE_LEGACY).toString().replace('\u00a0',' ').replaceAll("[ \\t]+"," ").replaceAll("\\n{3,}","\\n\\n").trim();plainCache.put(i,value);return value;
     }
     public File extractTo(File destination)throws IOException{
         File marker=new File(destination,".complete-"+file.length()+"-"+file.lastModified());if(marker.exists())return destination;
@@ -112,5 +118,6 @@ public final class EpubBook implements Closeable {
     }
     private static Integer chapterNumber(String label){try{java.util.regex.Matcher m=java.util.regex.Pattern.compile("(?i)^(?:(?:capitolo|chapter)\\s*)?(\\d+)\\b").matcher(label.trim());return m.find()?Integer.parseInt(m.group(1)):null;}catch(Exception ignored){return null;}}
     public int findChapter(String path){String n=normalize(decode(path));for(int i=0;i<chapters.size();i++)if(n.endsWith(chapters.get(i)))return i;return -1;}
+    public static final class TocEntry{public final String label;public final int chapter;public final String anchor;TocEntry(String label,int chapter,String anchor){this.label=label;this.chapter=chapter;this.anchor=anchor;}}
     @Override public void close()throws IOException{zip.close();}
 }

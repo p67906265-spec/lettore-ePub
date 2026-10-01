@@ -15,7 +15,7 @@
             android:name=".TtsService"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
-        <activity android:name=".ReaderActivity" android:configChanges="orientation|screenSize" />
+        <activity android:name=".ReaderActivity" />
         <activity android:name=".MainActivity" android:exported="true" android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -45,24 +45,24 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:mimeType="application/x-epub" />
             </intent-filter>
-            <!-- Diversi gestori file classificano gli EPUB come ZIP o file binari. -->
+            <!-- Tipi generici accettati soltanto se l'URI termina davvero in .epub. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:mimeType="application/octet-stream" />
+                <data android:scheme="content" android:mimeType="application/octet-stream" android:pathPattern=".*\\.epub" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:mimeType="application/zip" />
+                <data android:scheme="content" android:mimeType="application/zip" android:pathPattern=".*\\.epub" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:mimeType="application/x-zip-compressed" />
+                <data android:scheme="content" android:mimeType="application/x-zip-compressed" android:pathPattern=".*\\.epub" />
             </intent-filter>
         </activity>
     </application>

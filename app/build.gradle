@@ -1,5 +1,8 @@
 plugins { id 'com.android.application' }
 
+def hasReleaseSigning = file('paolo-release.jks').exists() &&
+        System.getenv('KEYSTORE_PASSWORD') && System.getenv('KEY_ALIAS') && System.getenv('KEY_PASSWORD')
+
 android {
     namespace 'com.paolofree.lettoreepub'
     compileSdk 36
@@ -8,8 +11,8 @@ android {
         applicationId 'com.paolofree.lettoreepub'
         minSdk 26
         targetSdk 36
-        versionCode 22
-        versionName '1.21'
+        versionCode 23
+        versionName '1.22'
     }
 
     signingConfigs {
@@ -24,7 +27,7 @@ android {
     buildTypes {
         release {
             minifyEnabled false
-            signingConfig signingConfigs.release
+            signingConfig hasReleaseSigning ? signingConfigs.release : signingConfigs.debug
         }
     }
 }

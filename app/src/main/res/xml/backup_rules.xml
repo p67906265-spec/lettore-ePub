@@ -1,1 +1,1 @@
-<?xml version="1.0" encoding="utf-8"?><full-backup-content><include domain="file" path="books/"/><include domain="sharedpref" path="."/></full-backup-content>
+<?xml version="1.0" encoding="utf-8"?><full-backup-content><include domain="sharedpref" path="."/><exclude domain="file" path="books/"/><exclude domain="file" path="thumbnails/"/></full-backup-content>

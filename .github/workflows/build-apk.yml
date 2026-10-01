@@ -15,32 +15,34 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
-      - name: Verifica Secrets firma
+      - name: Prepara firma permanente se disponibile
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          for secret in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
-            if [ -z "${!secret}" ]; then
-              echo "::error::Secret $secret mancante"
-              exit 1
-            fi
-          done
-          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > app/paolo-release.jks
-          test -s app/paolo-release.jks
-          echo "Firma permanente preparata"
+          if [ -n "$KEYSTORE_BASE64" ] && [ -n "$KEYSTORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ] && [ -n "$KEY_PASSWORD" ]; then
+            printf '%s' "$KEYSTORE_BASE64" | base64 --decode > app/paolo-release.jks
+            test -s app/paolo-release.jks
+            echo "Firma permanente preparata"
+          else
+            echo "Secrets incompleti: verrà usata la firma di prova debug"
+          fi
       - name: Compila APK release firmato
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: gradle assembleRelease --stacktrace
-      - name: Rinomina APK
-        run: cp app/build/outputs/apk/release/app-release.apk Lettore_ePub_v1.21_menu_tendina_colori_firmato.apk
+      - name: Prepara nome APK dalla versione Gradle
+        run: |
+          VERSION=$(sed -n "s/.*versionName ['\"]\([^'\"]*\)['\"].*/\1/p" app/build.gradle | head -1)
+          APK_NAME="Lettore_ePub_v${VERSION}_release.apk"
+          cp app/build/outputs/apk/release/app-release.apk "$APK_NAME"
+          echo "APK_NAME=$APK_NAME" >> "$GITHUB_ENV"
       - uses: actions/upload-artifact@v4
         with:
-          name: Lettore-ePub-v1.21-MENU-TENDINA-COLORI-FIRMATO
-          path: Lettore_ePub_v1.21_menu_tendina_colori_firmato.apk
+          name: Lettore-ePub-${{ env.APK_NAME }}
+          path: ${{ env.APK_NAME }}
           if-no-files-found: error
